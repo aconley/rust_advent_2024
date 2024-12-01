@@ -19,7 +19,7 @@ fn sum_of_differences(v1: &[i32], v2: &[i32]) -> i32 {
     let mut v2 = v2.to_vec();
     v1.sort();
     v2.sort();
-    v1.into_iter().zip(v2.into_iter()).map(|(a, b)| (b - a).abs()).sum()
+    v1.into_iter().zip(v2).map(|(a, b)| (b - a).abs()).sum()
 }
 
 // Given two lists of integers, return the sum of each value

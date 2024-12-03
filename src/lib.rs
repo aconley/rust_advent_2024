@@ -30,3 +30,18 @@ pub fn read_int_pairs(day: &str) -> std::io::Result<(Vec<i32>, Vec<i32>)> {
     }
     Ok((v1, v2))
 }
+
+pub fn read_number_grid(day: &str) -> std::io::Result<Vec<Vec<i32>>> {
+    let mut path = Path::new(INPUT_BASE_PATH).join(day);
+    path.set_extension("txt");
+    BufReader::new(File::open(path)?)
+        .lines()
+        .map(|line| {
+            let elems = line?
+                .split_whitespace()
+                .map(|s| s.parse::<i32>().expect("Value is not an i32"))
+                .collect::<Vec<i32>>();
+            Ok(elems)
+        })
+        .collect()
+}

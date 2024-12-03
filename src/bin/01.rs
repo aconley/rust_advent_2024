@@ -1,5 +1,4 @@
 /// Day 1.
-/// 
 fn main() -> std::io::Result<()> {
     let inputs = rust_advent::read_int_pairs("01")?;
     println!("Sum of differences: {}", sum_of_differences(&inputs.0, &inputs.1));

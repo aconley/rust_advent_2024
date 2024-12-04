@@ -1,9 +1,19 @@
 use std::fs::File;
 use std::io::{BufRead, BufReader};
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 const INPUT_BASE_PATH: &str = "/Users/alexconley/Programming/Advent Of Code/2024/input";
 
+fn get_input_path(day: &str) -> PathBuf {
+    let mut path = Path::new(INPUT_BASE_PATH).join(day);
+    path.set_extension("txt");
+    path
+}
+
+pub fn read_file_as_string(day: &str) -> std::io::Result<String> {
+    std::fs::read_to_string(get_input_path(day))
+}
+ 
 pub fn read_int_pairs(day: &str) -> std::io::Result<(Vec<i32>, Vec<i32>)> {
     let mut path = Path::new(INPUT_BASE_PATH).join(day);
     path.set_extension("txt");

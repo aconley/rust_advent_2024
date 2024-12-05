@@ -68,46 +68,43 @@ fn count_x_in_grid(inputs: &[Vec<u8>], word: &[u8]) -> u32 {
                 continue;
             }
 
-            // TODO: clean up to take advantage of short circuiting and reduce
-            // duplication.
-            let has_nwse_diag = 
-                word.iter().cloned().enumerate().all(|(word_idx, word_val)| {
-                    is_expected(inputs,
-                        row_idx as i32 - half_len as i32 + word_idx as i32,
-                        col_idx as i32 - half_len as i32 + word_idx as i32,
-                       word_val
-                    )
-                });
-            let has_senw_diag =
-                word.iter().cloned().enumerate().all(|(word_idx, word_val)| {
-                    is_expected(inputs,
-                        row_idx as i32 + half_len as i32 - word_idx as i32,
-                        col_idx as i32 + half_len as i32 - word_idx as i32,
-                        word_val
-                    )
-                });
-            let has_swne_diag =
-                word.iter().cloned().enumerate().all(|(word_idx, word_val)| {
-                    is_expected(inputs,
-                        row_idx as i32 + half_len as i32 - word_idx as i32,
-                        col_idx as i32 - half_len as i32 + word_idx as i32,
-                        word_val
-                    )
-                });
-            let has_nesw_diag =
-                word.iter().cloned().enumerate().all(|(word_idx, word_val)| {
-                    is_expected(inputs,
-                        row_idx as i32 - half_len as i32 + word_idx as i32,
-                        col_idx as i32 + half_len as i32 - word_idx as i32,
-                        word_val
-                    )
-                });
-            if (has_nwse_diag || has_senw_diag) && (has_swne_diag || has_nesw_diag) {
+            if (
+                // nw_se
+                has_diag_word(inputs, word, row_idx, col_idx, -1, -1) ||
+                // se_nw
+                has_diag_word(inputs, word, row_idx, col_idx, 1, 1)) &&
+                // sw_ne
+                (has_diag_word(inputs, word, row_idx, col_idx, 1, -1) ||
+                // ne_sw
+                has_diag_word(inputs, word, row_idx, col_idx, -1, 1))
+            {
                 count += 1;
             }
         }
     }
     count
+}
+
+fn has_diag_word(
+    inputs: &[Vec<u8>],
+    word: &[u8],
+    row_idx: usize,
+    col_idx: usize,
+    dir_row: i32,
+    dir_col: i32,
+) -> bool {
+    let half_len = (word.len() / 2) as i32;
+    word.iter()
+        .cloned()
+        .enumerate()
+        .all(|(word_idx, word_val)| {
+            is_expected(
+                inputs,
+                row_idx as i32 + dir_row * (half_len - word_idx as i32),
+                col_idx as i32 + dir_col * (half_len - word_idx as i32),
+                word_val,
+            )
+        })
 }
 
 #[cfg(test)]

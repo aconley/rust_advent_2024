@@ -15,9 +15,7 @@ pub fn read_file_as_string(day: &str) -> std::io::Result<String> {
 }
  
 pub fn read_int_pairs(day: &str) -> std::io::Result<(Vec<i32>, Vec<i32>)> {
-    let mut path = Path::new(INPUT_BASE_PATH).join(day);
-    path.set_extension("txt");
-    let reader = BufReader::new(File::open(path)?);
+    let reader = BufReader::new(File::open(get_input_path(day))?);
     let mut v1 = Vec::new();
     let mut v2 = Vec::new();
     for line in reader.lines() {
@@ -42,16 +40,21 @@ pub fn read_int_pairs(day: &str) -> std::io::Result<(Vec<i32>, Vec<i32>)> {
 }
 
 pub fn read_number_grid(day: &str) -> std::io::Result<Vec<Vec<i32>>> {
-    let mut path = Path::new(INPUT_BASE_PATH).join(day);
-    path.set_extension("txt");
-    BufReader::new(File::open(path)?)
+    BufReader::new(File::open(get_input_path(day))?)
         .lines()
         .map(|line| {
-            let elems = line?
+            Ok(line?
                 .split_whitespace()
                 .map(|s| s.parse::<i32>().expect("Value is not an i32"))
-                .collect::<Vec<i32>>();
-            Ok(elems)
+                .collect::<Vec<i32>>())
         })
         .collect()
 }
+
+pub fn read_ascii_grid(day: &str) -> std::io::Result<Vec<Vec<u8>>> {
+    BufReader::new(File::open(get_input_path(day))?)
+        .lines()
+        .map(|line| Ok(line?.as_bytes().to_vec()))
+        .collect()
+}
+

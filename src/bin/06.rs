@@ -5,12 +5,95 @@ fn main() -> std::io::Result<()> {
     let lines = rust_advent::read_file_as_lines("06")?;
     println!(
         "Squares covered by guard: {}",
-        squares_covered_by_guard(&lines)
+        count_visited_squares(&lines)
     );
+    println!(
+        "Number of positions that would cause loop: {}",
+        count_looping_obstacles(&lines)
+    );
+ 
     Ok(())
 }
 
-fn squares_covered_by_guard(lines: &Vec<String>) -> i32 {
+fn count_visited_squares(lines: &Vec<String>) -> i32 {
+    let grid = parse_grid(lines);
+    squares_covered_by_guard(&grid).len() as i32
+}
+
+fn squares_covered_by_guard(grid: &Grid) -> HashSet<Point> {
+    let mut visited = HashSet::<Point>::new();
+    visited.insert(grid.guard_initial_position.location);
+    let mut guard = grid.guard_initial_position;
+    loop {
+        let next_position = guard.get_next_move();
+        if next_position.x < 0
+            || next_position.x >= grid.width
+            || next_position.y < 0
+            || next_position.y >= grid.height
+        {
+            break;
+        } else if grid.obstacles.contains(&next_position) {
+            guard.turn_right();
+        } else {
+            visited.insert(next_position);
+            guard.location = next_position;
+        }
+    }
+    visited
+}
+
+fn count_looping_obstacles(lines: &Vec<String>) -> i32 {
+    let mut grid = parse_grid(lines);
+    let visited = squares_covered_by_guard(&grid);
+    if visited.is_empty() {
+        return 0;
+    }
+
+    let mut n_obstacles_that_cause_loop = 0;
+    for position in visited {
+        grid.obstacles.insert(position);
+        if is_guard_in_loop(&grid) {
+            n_obstacles_that_cause_loop += 1;
+        }
+        grid.obstacles.remove(&position);
+    }
+    n_obstacles_that_cause_loop
+}
+
+fn is_guard_in_loop(grid: &Grid) -> bool {
+    // This time we need to track the direction as well.
+    let mut visited = HashSet::<Guard>::new();
+    visited.insert(grid.guard_initial_position);
+    let mut guard = grid.guard_initial_position;
+    loop {
+        let next_position = guard.get_next_move();
+        if next_position.x < 0
+            || next_position.x >= grid.width
+            || next_position.y < 0
+            || next_position.y >= grid.height
+        {
+            // We exited the grid, the guard was definitely not stuck.
+            return false;
+        } else if grid.obstacles.contains(&next_position) {
+            guard.turn_right();
+        } else {
+            if !visited.insert(Guard { location: next_position, facing: guard.facing }) {
+                // Returned to previous state, the guard is in a loop.
+                return true;
+            }
+            guard.location = next_position;
+        }
+    }
+}
+
+struct Grid {
+    width: i32,
+    height: i32,
+    obstacles: HashSet<Point>,
+    guard_initial_position: Guard,
+}
+
+fn parse_grid(lines: &Vec<String>) -> Grid {
     let mut obstacles = HashSet::<Point>::new();
     let mut guard = Guard {
         location: Point { x: 0, y: 0 },
@@ -77,23 +160,15 @@ fn squares_covered_by_guard(lines: &Vec<String>) -> i32 {
             }
         }
     }
-
-    let mut visited = HashSet::<Point>::new();
-    visited.insert(guard.location);
-    loop {
-        let next_point = guard.get_next_move();
-        if next_point.x < 0 || next_point.x >= width as i32 || next_point.y < 0 || next_point.y >= height as i32 {  
-            break;
-        } else if obstacles.contains(&next_point) {
-            guard.turn_right();
-        } else {
-            visited.insert(next_point);
-            guard.location = next_point;
-        }
+    Grid {
+        width: width as i32,
+        height: height as i32,
+        obstacles,
+        guard_initial_position: guard,
     }
-    visited.len() as i32
 }
 
+#[derive(Debug, Eq, Hash, PartialEq, Copy, Clone)]
 enum Direction {
     Up,
     Down,
@@ -107,6 +182,7 @@ struct Point {
     y: i32,
 }
 
+#[derive(Debug, Eq, Hash, PartialEq, Copy, Clone)]
 struct Guard {
     location: Point,
     facing: Direction,

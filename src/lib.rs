@@ -1,3 +1,4 @@
+use std::collections::{HashMap, HashSet};
 use std::fs::File;
 use std::io::{BufRead, BufReader};
 use std::path::{Path, PathBuf};
@@ -13,7 +14,11 @@ fn get_input_path(day: &str) -> PathBuf {
 pub fn read_file_as_string(day: &str) -> std::io::Result<String> {
     std::fs::read_to_string(get_input_path(day))
 }
- 
+
+pub fn read_file_as_lines(day: &str) -> std::io::Result<Vec<String>> {
+    BufReader::new(File::open(get_input_path(day))?).lines().collect()
+}
+
 pub fn read_int_pairs(day: &str) -> std::io::Result<(Vec<i32>, Vec<i32>)> {
     let reader = BufReader::new(File::open(get_input_path(day))?);
     let mut v1 = Vec::new();
@@ -58,3 +63,31 @@ pub fn read_ascii_grid(day: &str) -> std::io::Result<Vec<Vec<u8>>> {
         .collect()
 }
 
+pub struct RulesAndUpdates {
+    // Precedence of the rules.  before[x] is the set of pages that must be printed before x.
+    pub before: HashMap<u16, HashSet<u16>>,
+    // The pages.
+    pub pages: Vec<Vec<u16>>,
+}
+
+pub fn read_rules_and_updates(day: &str) -> std::io::Result<RulesAndUpdates> {
+    let input = std::fs::read_to_string(get_input_path(day))?;
+    let (raw_rules, raw_pages) = input.split_once("\n\n").unwrap();
+    let mut before = HashMap::<u16, HashSet<u16>>::new();
+    for line in raw_rules.lines() {
+        let (a, b) = line.split_once('|').expect("line did not contain |");
+        before
+            .entry(b.parse::<u16>().expect("Couldn't parse b as integer"))
+            .or_default()
+            .insert(a.parse::<u16>().expect("Couldn't parse a as integer"));
+    }
+    let pages = raw_pages
+        .lines()
+        .map(|line| {
+            line.split(',')
+                .map(|w| w.parse::<u16>().expect("Couldn't parse page as integer"))
+                .collect::<Vec<_>>()
+        })
+        .collect();
+    Ok(RulesAndUpdates { before, pages })
+}

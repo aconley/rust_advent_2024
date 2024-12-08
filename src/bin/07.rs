@@ -1,5 +1,7 @@
 // Day 7: Bridge repair.
 
+use rayon::prelude::*;
+
 fn main() -> std::io::Result<()> {
     let input = rust_advent::read_file_as_lines("07")?;
     let puzzles = to_number_puzzles(&input);
@@ -7,7 +9,7 @@ fn main() -> std::io::Result<()> {
     println!(
         "Sum of goals of solveable puzzles (without concat): {}",
         puzzles
-            .iter()
+            .par_iter()
             .filter(|puzzle| is_solveable(puzzle))
             .map(|puzzle| puzzle.goal)
             .sum::<i64>()
@@ -15,12 +17,11 @@ fn main() -> std::io::Result<()> {
     println!(
         "Sum of goals of solveable puzzles (with concat): {}",
         puzzles
-            .iter()
+            .par_iter()
             .filter(|puzzle| is_solveable_with_concat(puzzle))
             .map(|puzzle| puzzle.goal)
             .sum::<i64>()
     );
- 
     Ok(())
 }
 

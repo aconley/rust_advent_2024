@@ -1,6 +1,6 @@
 /// Day 2.
 fn main() -> std::io::Result<()> {
-    let inputs = rust_advent::read_number_grid("02")?;
+    let inputs = rust_advent::read_number_grid_with_whitespace("02")?;
     println!(
         "Number monotonic within bound of differences: {}",
         count_monotonic_bound(&inputs, 3)

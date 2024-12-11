@@ -16,7 +16,9 @@ pub fn read_file_as_string(day: &str) -> std::io::Result<String> {
 }
 
 pub fn read_file_as_lines(day: &str) -> std::io::Result<Vec<String>> {
-    BufReader::new(File::open(get_input_path(day))?).lines().collect()
+    BufReader::new(File::open(get_input_path(day))?)
+        .lines()
+        .collect()
 }
 
 pub fn read_int_pairs(day: &str) -> std::io::Result<(Vec<i32>, Vec<i32>)> {
@@ -44,7 +46,7 @@ pub fn read_int_pairs(day: &str) -> std::io::Result<(Vec<i32>, Vec<i32>)> {
     Ok((v1, v2))
 }
 
-pub fn read_number_grid(day: &str) -> std::io::Result<Vec<Vec<i32>>> {
+pub fn read_number_grid_with_whitespace(day: &str) -> std::io::Result<Vec<Vec<i32>>> {
     BufReader::new(File::open(get_input_path(day))?)
         .lines()
         .map(|line| {
@@ -61,6 +63,23 @@ pub fn read_ascii_grid(day: &str) -> std::io::Result<Vec<Vec<u8>>> {
         .lines()
         .map(|line| Ok(line?.as_bytes().to_vec()))
         .collect()
+}
+
+pub fn parse_to_number_grid(input: &str) -> Vec<Vec<u8>> {
+    input
+        .lines()
+        .map(|line| {
+            line.trim()
+                .chars()
+                .filter_map(|c| c.to_digit(10).map(|d| d as u8))
+                .collect()
+        })
+        .filter(|line: &Vec<u8>| !line.is_empty())
+        .collect()
+}
+
+pub fn read_number_grid(day: &str) -> std::io::Result<Vec<Vec<u8>>> {
+    Ok(parse_to_number_grid(&read_file_as_string(day)?))
 }
 
 pub struct RulesAndUpdates {

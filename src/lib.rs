@@ -46,6 +46,13 @@ pub fn read_int_pairs(day: &str) -> std::io::Result<(Vec<i32>, Vec<i32>)> {
     Ok((v1, v2))
 }
 
+pub fn read_numbers_with_whitespace(day: &str) -> std::io::Result<Vec<u64>> {
+    Ok(read_file_as_string(day)?
+        .split_whitespace()
+        .map(|s| s.parse::<u64>().expect("Value is not an u64"))
+        .collect())
+}
+
 pub fn read_number_grid_with_whitespace(day: &str) -> std::io::Result<Vec<Vec<i32>>> {
     BufReader::new(File::open(get_input_path(day))?)
         .lines()

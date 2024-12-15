@@ -2,15 +2,26 @@
 
 use anyhow::anyhow;
 use itertools::Itertools;
+use rayon::prelude::*;
 
 fn main() -> anyhow::Result<()> {
     let input = rust_advent::read_file_as_string("14")?;
-    println!("{}", advance_and_multiply_quads(
-        RobotGrid::new_from_str(&input, 101, 103)?, 100));
+    let robot_grid = RobotGrid::new_from_str(&input, 101, 103)?;
+    println!(
+        "Quad score after 100 timesteps: {}",
+        advance_and_multiply_quads(&robot_grid, 100)
+    );
+
+    // Hope that the minimum quad score shows a christmas tree, but verify.
+    let timestep_of_minimum_score = find_minimum_score(&robot_grid);
+    println!(
+        "After {} timesteps, the score is minimized with grid:\n{}",
+        timestep_of_minimum_score, robot_grid.advance_by(timestep_of_minimum_score)
+    );
     Ok(())
 }
 
-#[derive(Debug, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
 struct Point {
     x: i16,
     y: i16,
@@ -52,28 +63,32 @@ struct RobotGrid {
 impl RobotGrid {
     fn new_from_str(value: &str, width: i16, height: i16) -> Result<Self, anyhow::Error> {
         Ok(Self {
-            robots: value.lines().map(|line| Robot::try_from(line)).collect::<Result<Vec<_>, _>>()?,
+            robots: value
+                .lines()
+                .map(|line| Robot::try_from(line))
+                .collect::<Result<Vec<_>, _>>()?,
             width,
             height,
         })
     }
 
-    fn show(&self) -> String {
-        let mut grid = vec![vec![' '; self.width as usize]; self.height as usize];
-        for robot in &self.robots {
-            grid[robot.position.y as usize][robot.position.x as usize] = '#';
-        }
-        grid.join("\n")
-    }
-}
-
-impl RobotGrid {
-    fn advance_by(&mut self, timesteps: i16) {
-        for robot in self.robots.iter_mut() {
-            robot.position.x =
-                (robot.position.x + robot.velocity.x * timesteps).rem_euclid(self.width);
-            robot.position.y =
-                (robot.position.y + robot.velocity.y * timesteps).rem_euclid(self.height);
+    fn advance_by(&self, timesteps: i16) -> Self {
+        Self {
+            robots: self
+                .robots
+                .iter()
+                .map(|robot| Robot {
+                    position: Point {
+                        x: (robot.position.x as i64 + robot.velocity.x as i64 * timesteps as i64)
+                            .rem_euclid(self.width as i64) as i16,
+                        y: (robot.position.y as i64 + robot.velocity.y as i64 * timesteps as i64)
+                            .rem_euclid(self.height as i64) as i16,
+                    },
+                    ..*robot
+                })
+                .collect(),
+            width: self.width,
+            height: self.height,
         }
     }
 
@@ -99,9 +114,38 @@ impl RobotGrid {
     }
 }
 
-fn advance_and_multiply_quads(mut grid: RobotGrid, timesteps: i16) -> u32 {
-    grid.advance_by(timesteps);
-    grid.count_quads().iter().map(|&x| x as u32).product()
+impl std::fmt::Display for RobotGrid {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let mut grid = vec![vec![' '; self.width as usize]; self.height as usize];
+        for robot in &self.robots {
+            grid[robot.position.y as usize][robot.position.x as usize] = '#';
+        }
+        for row in grid {
+            writeln!(f, "{}", row.iter().join(""))?;
+        }
+        Ok(())
+    }
+}
+
+fn advance_and_multiply_quads(grid: &RobotGrid, timesteps: i16) -> u32 {
+    grid.advance_by(timesteps)
+        .count_quads()
+        .iter()
+        .map(|&x| x as u32)
+        .product()
+}
+
+// Returns the timestep at which the score is minimized.
+fn find_minimum_score(grid: &RobotGrid) -> i16 {
+    // The grid must repeat in X every width steps, and in Y every height steps,
+    // so we don't need to consider more than that (really, their LCM).
+    let max_timesteps = grid.width * grid.height;
+    (1..max_timesteps)
+        .into_par_iter()
+        .map(|timestep| (timestep, advance_and_multiply_quads(grid, timestep)))
+        .min_by_key(|(_, score)| *score)
+        .map(|(timestep, _)| timestep)
+        .expect("Should have taken at least one step")
 }
 
 #[cfg(test)]
